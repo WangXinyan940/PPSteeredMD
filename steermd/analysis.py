@@ -12,7 +12,7 @@ import numpy as np
 def readOutput(fname):
     with open(fname, "r") as f:
         text = f.readlines()
-    data = [[float(j) for j in i.strip().split(",")] for i in text]
+    data = [[float(j) for j in i.strip().split()] for i in text]
     data = np.array(data)
     time = data[:,0]
     dt = time[1] - time[0]
