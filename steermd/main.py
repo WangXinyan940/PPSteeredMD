@@ -2,6 +2,7 @@ import argparse
 from steermd.optChain import optSideChain
 from steermd.generate import genIndices, genStates
 from steermd.steerConstVel import steerMDConstVel
+from steermd.analysis import genSpect
 import sys
 
 
@@ -154,6 +155,25 @@ def main():
                               default=2.0,
                               help="Timestep in fs.")
     parser_steer.set_defaults(func=steerMDConstVel)
+
+    parser_spect = subparsers.add_parser("spect", help="")
+    parser_spect.add_argument("-i",
+                              "--input",
+                              type=str,
+                              nargs="+",
+                              required=True,
+                              help="SteerMD output(s).")
+    parser_spect.add_argument("-o",
+                              "--output",
+                              type=str,
+                              default="out.txt",
+                              help="PMF.")
+    parser_spect.add_argument("-t",
+                              "--temperature",
+                              type=float,
+                              default=300.0,
+                              help="Temperature.")
+    parser_spect.set_defaults(func=genSpect)
 
     args = parser.parse_args()
 

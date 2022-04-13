@@ -82,7 +82,7 @@ class SMDForceConstVelReporter(object):
         :return:
 
         """
-        time = state.getTime()
+        time = state.getTime().value_in_unit(unit.picosecond)
 
         # For CustomCentroidBondForce class
         atom_coords = state.getPositions(
