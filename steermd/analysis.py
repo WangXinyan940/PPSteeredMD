@@ -40,6 +40,7 @@ def genSpect(args):
         beta = 1. / 8.314 / args.temperature * 1000.0
         works = np.array(work)
         wout = 1. / beta * np.log(np.exp(- beta * works).mean(axis=0))
+        forces = np.array(forces)
         fout = forces.mean(axis=0)
 
     with open(args.output, "w") as f:
