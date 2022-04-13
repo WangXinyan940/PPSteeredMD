@@ -82,6 +82,8 @@ class SMDForceConstVelReporter(object):
         :return:
 
         """
+        time = state.getTime()
+
         # For CustomCentroidBondForce class
         atom_coords = state.getPositions(
             asNumpy=True)[self._pull_indices].value_in_unit(unit.nanometer)
@@ -105,89 +107,9 @@ class SMDForceConstVelReporter(object):
         dist = np.linalg.norm(vec)
         norm = vec / dist
 
-        force = self._force_constant * (dist - displaceVar)
-        self._out.write('%g %g %g %g %g %g %g %g \n' %
-                        (x0, y0, z0, x, y, z, displaceVar, force))
-        self._out.flush()
-        return 0
-
-
-class SMDForceConstForceReporter(object):
-    """
-    Report the pulling force value to append to the simulation reporter.
-    The calculation bases on the analytical form of the potential. Get the positions,
-    params from simulation, we calculate the force after certain interval.
-
-    Mandatory to have 'describeNextReport' and 'report' functions.
-
-    """
-    def __init__(self,
-                 file,
-                 reportInterval,
-                 ref_indices=[],
-                 ref_weights=[],
-                 pull_indices=[],
-                 pull_weights=[],
-                 force=None):
-        """
-        pull_atom_indices = [ref, pulled]
-        """
-        self._out = open(file, 'w')
-        self._reportInterval = reportInterval
-        self._force = force
-        self._ref_indices = np.array(ref_indices, dtype=int)
-        self._pull_indices = np.array(pull_indices, dtype=int)
-        self._ref_weights = np.array(ref_weights, dtype=float)
-        self._pull_weights = np.array(pull_weights, dtype=float)
-
-    def __del__(self):
-        self._out.close()
-
-    def describeNextReport(self, simulation):
-        """
-        Tell the program what values need to be returned.
-        Coordinates, velocities, forces, energies;
-
-        :param simulation: Simulation object
-        :return:
-            steps: how many steps away to report;
-            True/False: whether to pass coor to State object;
-            True/False: whether to pass vel to State object;
-            True/False: whether to pass force to State object;
-            True/False: whether to pass energy to State object;
-        """
-        steps = self._reportInterval - simulation.currentStep % self._reportInterval
-        return (steps, True, False, False, False)
-
-    def report(self, simulation, state):
-        """
-        Collect params, calculate and report force to output file.
-
-        :param simulation: Simulation object;
-        :param state: State object with info specifief by describeNextReport();
-        :return:
-
-        """
-        # For CustomCentroidBondForce class
-        atom_coords = state.getPositions(
-            asNumpy=True)[self._pull_indices].value_in_unit(unit.nanometer)
-        x = np.sum(atom_coords[:, 0] * self._pull_weights /
-                   self._pull_weights.sum())
-        y = np.sum(atom_coords[:, 1] * self._pull_weights /
-                   self._pull_weights.sum())
-        z = np.sum(atom_coords[:, 2] * self._pull_weights /
-                   self._pull_weights.sum())
-        atom_coords = state.getPositions(
-            asNumpy=True)[self._ref_indices].value_in_unit(unit.nanometer)
-        x0 = np.sum(atom_coords[:, 0] * self._ref_weights /
-                    self._ref_weights.sum())
-        y0 = np.sum(atom_coords[:, 1] * self._ref_weights /
-                    self._ref_weights.sum())
-        z0 = np.sum(atom_coords[:, 2] * self._ref_weights /
-                    self._ref_weights.sum())
-        forcex, forcey, forcez = self._force
+        force = self._force_constant * (displaceVar - dist)
         self._out.write('%g %g %g %g %g %g %g %g %g \n' %
-                        (x0, y0, z0, x, y, z, forcex, forcey, forcez))
+                        (time, x0, y0, z0, x, y, z, displaceVar, force))
         self._out.flush()
         return 0
 
@@ -204,11 +126,3 @@ def steeredBiasConstVel(ref_idx, pull_idx, ref_weights, pull_weights, fc,
     SMD_bond.addGroup(pull_idx, pull_weights)
     SMD_bond.addBond([0, 1], [fc])
     return SMD_bond
-
-
-def steeredBiasConstForce():
-    pass
-
-
-def steeredConsConstForce():
-    pass

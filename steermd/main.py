@@ -149,6 +149,10 @@ def main():
                               type=int,
                               default=100,
                               help="Steps to print steering force.")
+    parser_steer.add_argument("--delta",
+                              type=float,
+                              default=2.0,
+                              help="Timestep in fs.")
     parser_steer.set_defaults(func=steerMDConstVel)
 
     args = parser.parse_args()

@@ -69,18 +69,18 @@ def steerMDConstVel(args):
 
     integ = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
                                         5.0 / unit.picosecond,
-                                        2.0 * unit.femtosecond)
+                                        args.delta * unit.femtosecond)
     simulation = app.Simulation(pdb.topology, system, integ, plat)
     with open(args.input, "r") as f:
         state = mm.XmlSerializer.deserialize(f.read())
     simulation.context.setPositions(state.getPositions())
     simulation.context.setVelocities(state.getVelocities())
 
-    nstep = int(args.length * 500)
+    nstep = int(args.length * 1000 / args.delta)
 
     simulation.reporters.append(
         app.StateDataReporter(sys.stdout,
-                              10000,
+                              int(10.0 * 1000 / args.delta),
                               step=True,
                               time=True,
                               potentialEnergy=True,
@@ -98,7 +98,7 @@ def steerMDConstVel(args):
                                  pull_indices=lig_idx,
                                  pull_weights=lig_weights,
                                  force_constant=args.fconst))
-    for nround in range(int(nstep/10)):
+    for nround in range(int(nstep / 10)):
         simulation.step(10)
-        displace += 10 * 0.002 * args.velocity
+        displace += 10 * 0.001 * args.delta * args.velocity
         simulation.context.setParameter('displaceVar', displace)

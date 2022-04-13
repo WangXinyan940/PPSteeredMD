@@ -11,7 +11,6 @@ import argparse
 import sys
 import os
 
-from sklearn.linear_model import enet_path
 
 HOME = os.path.dirname(os.path.abspath(__file__))
 
