@@ -80,7 +80,7 @@ MOVINGRESTRAINT ...
 FLUSH STRIDE={nprint}
 PRINT ARG=dist,bias._cntr,bias.force2 STRIDE={nprint} FILE={output}""")
 
-    os.system(f"{gmx} editconf -f {geomfile} -d 5.0 -bt cubic -o box.gro")
+    os.system(f"{gmx} editconf -f {geomfile} -d 4.0 -bt cubic -o box.gro")
     os.system(
         f"{gmx} grompp -f minim.mdp -c box.gro -p {topfile} -o min.tpr -r box.gro"
     )
@@ -91,7 +91,7 @@ PRINT ARG=dist,bias._cntr,bias.force2 STRIDE={nprint} FILE={output}""")
     os.system(
         f"{gmx} grompp -f minim.mdp -c solvated.gro -p {topfile} -o min2.tpr -r solvated.gro -maxwarn 1"
     )
-    os.system(f"{gmx} mdrun -v -deffnm min2 -nt {nt} --nsteps 10000")
+    os.system(f"{gmx} mdrun -v -deffnm min2 -nt {nt} --nsteps 5000")
     os.system(
         f"{gmx} grompp -f eq.mdp -c min2.gro -p {topfile} -o eq.tpr -r min2.gro -maxwarn 1"
     )
