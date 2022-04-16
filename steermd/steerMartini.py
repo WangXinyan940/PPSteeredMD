@@ -118,6 +118,6 @@ def runMSteer(args):
                     args.output,
                     args.kconst,
                     args.velocity,
-                    nprint=args.nprint
+                    nprint=args.nprint,
                     gmx=args.gmx,
                     nt=args.nthreads)
