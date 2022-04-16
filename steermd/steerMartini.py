@@ -61,7 +61,7 @@ def buildMartiniSys(pdbname,
     lcom = geom[cgligidx, :].mean(axis=0)
     dist = np.linalg.norm(rcom - lcom)
 
-    stepfin = int(4.0 / vel / 0.02 + 1e-3)
+    stepfin = int(3.0 / vel / 0.02 + 1e-3)
 
     # Build plumed file
     rcomstr = ",".join(["%i" % (i + 1) for i in cgrecidx])
@@ -80,7 +80,7 @@ MOVINGRESTRAINT ...
 FLUSH STRIDE={nprint}
 PRINT ARG=dist,bias.dist_cntr,bias.dist_work,bias.force2 STRIDE={nprint} FILE={output}""")
 
-    os.system(f"{gmx} editconf -f {geomfile} -d 4.0 -bt cubic -o box.gro")
+    os.system(f"{gmx} editconf -f {geomfile} -d 3.0 -bt cubic -o box.gro")
     os.system(
         f"{gmx} grompp -f minim.mdp -c box.gro -p {topfile} -o min.tpr -r box.gro"
     )
