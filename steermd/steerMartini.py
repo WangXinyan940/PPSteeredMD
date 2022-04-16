@@ -61,7 +61,7 @@ def buildMartiniSys(pdbname,
     lcom = geom[cgligidx, :].mean(axis=0)
     dist = np.linalg.norm(rcom - lcom)
 
-    stepfin = 4.0 / vel / 0.02
+    stepfin = int(4.0 / vel / 0.02)
 
     # Build plumed file
     rcomstr = ",".join(["%i" % (i + 1) for i in cgrecidx])
@@ -78,8 +78,7 @@ MOVINGRESTRAINT ...
     STEP1={stepfin} AT1={dist+4} KAPPA1={kconst}
 ...
 FLUSH STRIDE={nprint}
-PRINT ARG=dist,bias._cntr,bias.force2 STRIDE={nprint} FILE={output}
-        """)
+PRINT ARG=dist,bias._cntr,bias.force2 STRIDE={nprint} FILE={output}""")
 
     os.system(f"{gmx} editconf -f {geomfile} -d 5.0 -bt cubic -o box.gro")
     os.system(
@@ -90,15 +89,15 @@ PRINT ARG=dist,bias._cntr,bias.force2 STRIDE={nprint} FILE={output}
         f"{gmx} solvate -cp min.gro -cs water.gro -radius 0.21 -o solvated.gro -p {topfile}"
     )
     os.system(
-        f"{gmx} grompp -f minim.mdp -c solvated.gro -p {topfile} -o min2.tpr -r solvated.gro"
+        f"{gmx} grompp -f minim.mdp -c solvated.gro -p {topfile} -o min2.tpr -r solvated.gro -maxwarn 1"
     )
     os.system(f"{gmx} mdrun -v -deffnm min2 -nt {nt} --nsteps 10000")
     os.system(
-        f"{gmx} grompp -f eq.mdp -c min2.gro -p {topfile} -o eq.tpr -r min2.gro"
+        f"{gmx} grompp -f eq.mdp -c min2.gro -p {topfile} -o eq.tpr -r min2.gro -maxwarn 1"
     )
     os.system(f"{gmx} mdrun -v -deffnm eq -nt {nt}")
     os.system(
-        f"{gmx} grompp -f dynamic.mdp -c eq.gro -p {topfile} -t eq.cpt -o dyn.tpr"
+        f"{gmx} grompp -f dynamic.mdp -c eq.gro -p {topfile} -t eq.cpt -o dyn.tpr -maxwarn 1"
     )
     os.system(
         f"{gmx} mdrun -v -deffnm dyn -nt {nt} --nsteps {stepfin} --plumed {plumedfile}"
