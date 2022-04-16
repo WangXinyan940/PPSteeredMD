@@ -61,7 +61,7 @@ def buildMartiniSys(pdbname,
     lcom = geom[cgligidx, :].mean(axis=0)
     dist = np.linalg.norm(rcom - lcom)
 
-    stepfin = int(4.0 / vel / 0.02)
+    stepfin = int(4.0 / vel / 0.02 + 1e-3)
 
     # Build plumed file
     rcomstr = ",".join(["%i" % (i + 1) for i in cgrecidx])
