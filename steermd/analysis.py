@@ -7,6 +7,16 @@ except ImportError as e:
     import simtk.openmm.app as app
     import simtk.unit as unit
 import numpy as np
+import numba as nb
+
+
+@nb.njit
+def integ(force, dt, vel):
+    work = np.zeros((force.shape[0],))
+    for ii in range(work.shape[0]):
+        for jj in range(ii):
+            work[ii] += force[jj] * dt * vel
+    return work
 
 
 def readOutput(fname):
@@ -20,9 +30,7 @@ def readOutput(fname):
     dx = ref[1] - ref[0]
     vel = dx / dt
     force = data[:,-1]
-    work = np.zeros((data.shape[0],))
-    for ii in range(data.shape[0]):
-        work[ii] = force[:ii].sum() * dt * vel # ps * nm / ps * kJ/mol / nm = 
+    work = integ(force, dt, vel)
     return time, force, work
 
 def genSpect(args):
@@ -39,7 +47,7 @@ def genSpect(args):
         # ensemble average of work
         beta = 1. / 8.314 / args.temperature * 1000.0
         works = np.array(work)
-        wout = 1. / beta * np.log(np.exp(- beta * works).mean(axis=0))
+        wout = - 1. / beta * np.log(np.exp(- beta * works).mean(axis=0))
         forces = np.array(forces)
         fout = forces.mean(axis=0)
 

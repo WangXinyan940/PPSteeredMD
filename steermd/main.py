@@ -3,6 +3,7 @@ from steermd.optChain import optSideChain
 from steermd.generate import genIndices, genStates
 from steermd.steerConstVel import steerMDConstVel
 from steermd.analysis import genSpect
+from steermd.steerMartini import runMSteer
 import sys
 
 
@@ -155,6 +156,52 @@ def main():
                               default=2.0,
                               help="Timestep in fs.")
     parser_steer.set_defaults(func=steerMDConstVel)
+
+    parser_msteer = subparsers.add_parser(
+        "msteer",
+        help="Steer ligand to leave receptor using constant velocity.")
+
+    parser_msteer.add_argument("-i",
+                               "--input",
+                               type=str,
+                               required=True,
+                               help="Input PDB.")
+    parser_msteer.add_argument(
+        "-n",
+        "--index",
+        type=str,
+        required=True,
+        help="Input index file to distinguish receptor and ligand.")
+    parser_msteer.add_argument("-o",
+                               "--output",
+                               type=str,
+                               default="steer.txt",
+                               help="Steered force data.")
+    parser_msteer.add_argument("-v",
+                               "--vel",
+                               dest="velocity",
+                               type=float,
+                               default=0.04,
+                               help="Pulling velocity (nm/ps)")
+    parser_msteer.add_argument("-f",
+                               "--fconst",
+                               dest="kconst",
+                               type=float,
+                               default=2000.0,
+                               help="Force constant (kJ/mol/nm^2)")
+    parser_msteer.add_argument("--nprint",
+                               type=int,
+                               default=10,
+                               help="Steps to print steering force.")
+    parser_msteer.add_argument("--gmx",
+                               type=str,
+                               default="gmx",
+                               help="")
+    parser_msteer.add_argument("--nthreads",
+                               type=int,
+                               default=8,
+                               help="")
+    parser_msteer.set_defaults(func=runMSteer)
 
     parser_spect = subparsers.add_parser("spect", help="")
     parser_spect.add_argument("-i",
