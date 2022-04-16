@@ -78,7 +78,7 @@ MOVINGRESTRAINT ...
     STEP1={stepfin} AT1={dist+4} KAPPA1={kconst}
 ...
 FLUSH STRIDE={nprint}
-PRINT ARG=dist,bias._cntr,bias.force2 STRIDE={nprint} FILE={output}""")
+PRINT ARG=dist,bias.dist_cntr,bias.dist_work,bias.force2 STRIDE={nprint} FILE={output}""")
 
     os.system(f"{gmx} editconf -f {geomfile} -d 4.0 -bt cubic -o box.gro")
     os.system(
