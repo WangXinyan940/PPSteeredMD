@@ -4,6 +4,7 @@ from steermd.generate import genIndices, genStates
 from steermd.steerConstVel import steerMDConstVel
 from steermd.analysis import genSpect
 from steermd.steerMartini import runMSteer
+from steermd.steerPlumed import runSteerMDPlumed
 import sys
 
 
@@ -193,15 +194,67 @@ def main():
                                type=int,
                                default=10,
                                help="Steps to print steering force.")
-    parser_msteer.add_argument("--gmx",
-                               type=str,
-                               default="gmx",
-                               help="")
-    parser_msteer.add_argument("--nthreads",
-                               type=int,
-                               default=8,
-                               help="")
+    parser_msteer.add_argument("--gmx", type=str, default="gmx", help="")
+    parser_msteer.add_argument("--nthreads", type=int, default=8, help="")
     parser_msteer.set_defaults(func=runMSteer)
+
+    parser_psteer = subparsers.add_parser(
+        "psteer",
+        help="Steer ligand to leave receptor using constant velocity.")
+
+    parser_psteer.add_argument("-i",
+                               "--input",
+                               type=str,
+                               required=True,
+                               help="Input state.")
+    parser_psteer.add_argument("-t",
+                               "--topol",
+                               type=str,
+                               required=True,
+                               help="Input topology PDB file.")
+    parser_psteer.add_argument(
+        "-n",
+        "--index",
+        type=str,
+        required=True,
+        help="Input index file to distinguish receptor and ligand.")
+    parser_psteer.add_argument("-o",
+                               "--output",
+                               type=str,
+                               default="steer.txt",
+                               help="Steered force data.")
+    parser_psteer.add_argument("-x",
+                               dest="traj",
+                               type=str,
+                               default="steered.dcd",
+                               help="Pulling trajectory.")
+    parser_psteer.add_argument("-v",
+                               "--vel",
+                               dest="velocity",
+                               type=float,
+                               default=0.001,
+                               help="Pulling velocity (nm/ps)")
+    parser_psteer.add_argument("-l",
+                               "--length",
+                               dest="length",
+                               type=float,
+                               default=4000.0,
+                               help="Simulation length (ps)")
+    parser_psteer.add_argument("-f",
+                               "--fconst",
+                               dest="fconst",
+                               type=float,
+                               default=2500.0,
+                               help="Force constant (kJ/mol/nm^2)")
+    parser_psteer.add_argument("--nprint",
+                               type=int,
+                               default=100,
+                               help="Steps to print steering force.")
+    parser_psteer.add_argument("--delta",
+                               type=float,
+                               default=2.0,
+                               help="Timestep in fs.")
+    parser_psteer.set_defaults(func=runSteerMDPlumed)
 
     parser_spect = subparsers.add_parser("spect", help="")
     parser_spect.add_argument("-i",
