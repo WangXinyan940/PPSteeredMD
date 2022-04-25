@@ -74,8 +74,8 @@ dist: DISTANCE ATOMS=c1,c2
 MOVINGRESTRAINT ...
     label=bias
     ARG=dist
-    STEP0=0 AT0={displace} KAPPA0={args.kconst}
-    STEP1={nstep} AT1={displace_fin} KAPPA1={args.kconst}
+    STEP0=0 AT0={displace} KAPPA0={args.fconst}
+    STEP1={nstep} AT1={displace_fin} KAPPA1={args.fconst}
 ...
 FLUSH STRIDE={args.nprint}
 PRINT ARG=dist,bias.dist_cntr,bias.dist_work,bias.force2 STRIDE={args.nprint} FILE={args.output}"""
