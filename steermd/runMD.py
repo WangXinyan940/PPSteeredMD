@@ -60,7 +60,6 @@ def regularMD(args):
                             "%s/prm/gbn2.xml" % HOME)
         pdb = app.PDBFile(args.input)
         idx = [a.index for a in pdb.topology.atoms()]
-    pos = pdb.getPositions(asNumpy=True).value_in_unit(unit.nanometer)
 
     if args.water:
         system = ff.createSystem(pdb.topology,
