@@ -97,43 +97,46 @@ def regularMD(args):
         for nstate in range(trep.shape[0]):
             ni = nk[nstate]
             kTi = 8.314 / 1000.0 * trep[nstate]
-            Aup.append(f"{ni:.32f} * exp(- energy / {kTi:.32f}) / {kTi:.32f}")
-            Adown.append(f"{ni:.32f} * exp(- energy / {kTi:.32f})")
+            Aup.append(f"{ni:.32f} * exp(- energy1 / {kTi:.32f}) / {kTi:.32f}")
+            Adown.append(f"{ni:.32f} * exp(- energy1 / {kTi:.32f})")
         AupT = " + ".join(Aup)
         AdownT = " + ".join(Adown)
 
         temperature = trep[0]
         friction = 5.0
-        dt = args.delta * 0.001
+        dt = 0.001 * args.delta
         kB = 8.314 / 1000.0
         kT = kB * temperature
 
         integrator = mm.CustomIntegrator(dt)
-        integrator.addGlobalVariable("a", np.exp(-friction * dt))
-        integrator.addGlobalVariable("b",
-                                     np.sqrt(1 - np.exp(-2 * friction * dt)))
-        integrator.addGlobalVariable("kT", kT)
-        integrator.addPerDofVariable("x1", 0)
+        integrator.addGlobalVariable("a", np.exp(-friction*dt));
+        integrator.addGlobalVariable("b", np.sqrt(1-np.exp(-2*friction*dt)));
+        integrator.addGlobalVariable("kT", kT);
+        integrator.addPerDofVariable("x1", 0);
+        integrator.addPerDofVariable("fadd", 0);
 
         # create state K
+        integrator.addGlobalVariable("one_A", 0.0)
         integrator.addGlobalVariable("Aup", 0.0)
         integrator.addGlobalVariable("Adown", 0.0)
-        integrator.addPerDofVariable("feff", 0.0)
-        integrator.addUpdateContextState()
+        #integrator.addPerDofVariable("feff", 0.0) 
+        integrator.addUpdateContextState();
         # compute Astate
         integrator.addComputeGlobal("Aup", "0.0")
         integrator.addComputeGlobal("Adown", "0.0")
         integrator.addComputeGlobal("Aup", AupT)
         integrator.addComputeGlobal("Adown", AdownT)
-        integrator.addComputePerDof("feff", "f * Aup / Adown * kT")
-        integrator.addComputePerDof("v", "v + dt*feff/m")
-        integrator.addConstrainVelocities()
-        integrator.addComputePerDof("x", "x + 0.5*dt*v")
-        integrator.addComputePerDof("v", "a*v + b*sqrt(kT/m)*gaussian")
-        integrator.addComputePerDof("x", "x + 0.5*dt*v")
-        integrator.addComputePerDof("x1", "x")
-        integrator.addConstrainPositions()
-        integrator.addComputePerDof("v", "v + (x-x1)/dt")
+        integrator.addComputeGlobal("one_A", "1 - Aup / Adown * kT")
+        #integrator.addComputePerDof("fadd", "fadd * (1 - Aup / Adown * kT)")
+        integrator.addComputePerDof("v", "v + dt*f/m");
+        integrator.addComputePerDof("v", "v - dt*f1*one_A/m");
+        integrator.addConstrainVelocities();
+        integrator.addComputePerDof("x", "x + 0.5*dt*v");
+        integrator.addComputePerDof("v", "a*v + b*sqrt(kT/m)*gaussian");
+        integrator.addComputePerDof("x", "x + 0.5*dt*v");
+        integrator.addComputePerDof("x1", "x");
+        integrator.addConstrainPositions();
+        integrator.addComputePerDof("v", "v + (x-x1)/dt");
 
     else:
         integrator = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
