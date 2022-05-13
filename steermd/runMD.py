@@ -8,6 +8,7 @@ except ImportError as e:
     import simtk.unit as unit
 import numpy as np
 from mdtraj.reporters import DCDReporter
+import os
 
 HOME = os.path.dirname(os.path.abspath(__file__))
 
