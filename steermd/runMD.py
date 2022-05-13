@@ -9,6 +9,8 @@ except ImportError as e:
 import numpy as np
 from mdtraj.reporters import DCDReporter
 
+HOME = os.path.dirname(os.path.abspath(__file__))
+
 
 class SelectEnergyReporter:
     def __init__(self, file: str, reportInterval: int):
