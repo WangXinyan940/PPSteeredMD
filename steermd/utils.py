@@ -144,7 +144,7 @@ class SITSLangevinIntegrator(mm.CustomIntegrator):
         AupT = " + ".join(Aup)
         AdownT = " + ".join(Adown)
 
-        temperature = trep[0]
+        temperature = Tlist[0]
         kB = 8.314 / 1000.0
         kT = kB * temperature
         ft = friction * dt * 0.001  # friction in 1/ps, dt in fs
