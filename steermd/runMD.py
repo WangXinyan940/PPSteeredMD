@@ -69,18 +69,49 @@ def regularMD(args):
             if isinstance(force, mm.PeriodicTorsionForce):
                 force.setForceGroup(1)
 
+        # equilibrate system
+        print("Start EQ...")
+        integEQ = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
+                                              5.0 / unit.picosecond,
+                                              args.delta * unit.femtosecond)
+        simEQ = app.Simulation(pdb.topology, system, integEQ, plat)
+        simEQ.context.setPositions(pdb.getPositions())
+        nstep = int(1.0 * 1000 * 1000 / args.delta)
+        simEQ.reporters.append(
+            app.StateDataReporter(sys.stdout,
+                                  int(10.0 * 1000 / args.delta),
+                                  step=True,
+                                  time=True,
+                                  potentialEnergy=True,
+                                  temperature=True,
+                                  progress=True,
+                                  remainingTime=True,
+                                  speed=True,
+                                  totalSteps=nstep))
+        simEQ.step(nstep)
+        state = simEQ.context.getState(getPositions=True,
+                                       getVelocities=True,
+                                       getEnergy=True,
+                                       groups={1})
+        Eref = state.getPotentialEnergy().value_in_unit(
+            unit.kilojoule_per_mole)
+
+        # run MD
         Tlist = np.linspace(300., 600., 91)
         Eref = SITSLangevinIntegrator.getGroup1Energy(
             system, pdb.getPositions(asNumpy=True))
         logNlist = SITSLangevinIntegrator.genLogNList(Tlist)
         integrator = SITSLangevinIntegrator(Tlist, logNlist, 5.0, args.delta)
-
+        simulation = app.Simulation(pdb.topology, system, integrator, plat)
+        simulation.context.setPositions(state.getPositions())
+        simulation.context.setVelocities(state.getVelocities())
     else:
         integrator = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
                                                  5.0 / unit.picosecond,
                                                  args.delta * unit.femtosecond)
-    simulation = app.Simulation(pdb.topology, system, integrator, plat)
-    simulation.context.setPositions(pdb.getPositions())
+        simulation = app.Simulation(pdb.topology, system, integrator, plat)
+        simulation.context.setPositions(pdb.getPositions())
+        simulation.context.setVelocitiesToTemperature(300.0 * unit.kelvin)
 
     nstep = int(args.length * 1000 / args.delta)
 

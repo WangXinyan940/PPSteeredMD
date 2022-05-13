@@ -192,15 +192,6 @@ class SITSLangevinIntegrator(mm.CustomIntegrator):
         Pk = Pall / Pall.sum(axis=0).reshape((1, -1))
         return Pk
 
-    @classmethod
-    def getGroup1Energy(cls, system, positions):
-        integ = mm.VerletIntegrator(0.1)
-        context = mm.Context(system, integ)
-        context.setPositions(positions)
-        state = context.getState(getEnergy=True, groups={1})
-        return state.getPotentialEnergy().value_in_unit(
-            unit.kilojoule_per_mole)
-
 
 class SelectEnergyReporter:
     def __init__(self, file: str, reportInterval: int, logNlist):
@@ -212,7 +203,7 @@ class SelectEnergyReporter:
             if n % 10 == 0:
                 self._out.write("\n# ")
             self._out.write(f"{logn:15.8f} ")
-        self._out.write("\n# ")
+        self._out.write("\n")
 
     def __del__(self):
         self._out.close()
