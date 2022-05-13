@@ -5,6 +5,7 @@ from steermd.steerConstVel import steerMDConstVel
 from steermd.analysis import genSpect
 from steermd.steerMartini import runMSteer
 from steermd.steerPlumed import runSteerMDPlumed
+from steermd.runMD import regularMD
 import sys
 
 
@@ -274,6 +275,37 @@ def main():
                               default=300.0,
                               help="Temperature.")
     parser_spect.set_defaults(func=genSpect)
+
+    parser_bfmd = subparsers.add_parser("bfmd",
+                                        help="Brute-force MD for sampling.")
+
+    parser_bfmd.add_argument("-i",
+                             "--input",
+                             type=str,
+                             required=True,
+                             help="Input PDB.")
+    # parser_steer.add_argument(
+    #     "-n",
+    #     "--index",
+    #     type=str,
+    #     required=True,
+    #     help="Input index file to distinguish receptor and ligand.")
+    parser_bfmd.add_argument("-x",
+                             dest="traj",
+                             type=str,
+                             default="steered.dcd",
+                             help="Pulling trajectory.")
+    parser_bfmd.add_argument("-l",
+                             "--length",
+                             dest="length",
+                             type=float,
+                             default=1000.0,
+                             help="Simulation length (ps)")
+    parser_bfmd.add_argument("--delta",
+                             type=float,
+                             default=2.0,
+                             help="Timestep in fs.")
+    parser_bfmd.set_defaults(func=regularMD)
 
     args = parser.parse_args()
 
