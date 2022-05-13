@@ -27,13 +27,13 @@ def genIndices(args):
     with open(args.output, "w") as f:
         f.write("[ receptor ]\n")
         for n, i in enumerate(rec_idx):
-            f.write("%i " % i)
+            f.write("%i " % (i+1))
             if n > 0 and n % 20 == 0:
                 f.write("\n")
         f.write("\n")
         f.write("[ ligand ]\n")
         for n, i in enumerate(lig_idx):
-            f.write("%i " % i)
+            f.write("%i " % (i+1))
             if n > 0 and n % 20 == 0:
                 f.write("\n")
 

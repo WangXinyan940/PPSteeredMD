@@ -22,7 +22,7 @@ def readIndices(fname):
             res[key] = []
         else:
             for v in line.strip().split():
-                res[key].append(int(v))
+                res[key].append(int(v)-1)
     return res
 
 
