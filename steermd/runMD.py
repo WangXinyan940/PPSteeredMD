@@ -91,7 +91,7 @@ def regularMD(args):
                                               args.delta * unit.femtosecond)
         simEQ = app.Simulation(pdb.topology, system, integEQ, plat)
         simEQ.context.setPositions(pdb.getPositions())
-        nstep = int(200 * 1000 / args.delta)
+        nstep = int(100 * 1000 / args.delta)
         simEQ.reporters.append(
             app.StateDataReporter(sys.stdout,
                                   int(10.0 * 1000 / args.delta),
