@@ -22,7 +22,7 @@ def readIndices(fname):
             res[key] = []
         else:
             for v in line.strip().split():
-                res[key].append(int(v)-1)
+                res[key].append(int(v) - 1)
     return res
 
 
@@ -126,3 +126,104 @@ def steeredBiasConstVel(ref_idx, pull_idx, ref_weights, pull_weights, fc,
     SMD_bond.addGroup(pull_idx, pull_weights)
     SMD_bond.addBond([0, 1], [fc])
     return SMD_bond
+
+
+class SITSLangevinIntegrator(mm.CustomIntegrator):
+    def __init__(self, Tlist, logNlist, friction, dt):
+        super(SITSLangevinIntegrator).__init__(dt)
+
+        self.logNlist = logNlist
+        self.Tlist = Tlist
+
+        Aup, Adown = [], []
+        for nstate in range(Tlist.shape[0]):
+            kTi = 8.314 / 1000.0 * Tlist[nstate]
+            logN = logNlist[nstate]
+            Aup.append(f"exp({logN:.32f} - energy1 / {kTi:.32f}) / {kTi:.32f}")
+            Adown.append(f"exp({logN:.32f} - energy1 / {kTi:.32f})")
+        AupT = " + ".join(Aup)
+        AdownT = " + ".join(Adown)
+
+        temperature = trep[0]
+        kB = 8.314 / 1000.0
+        kT = kB * temperature
+        ft = friction * dt * 0.001  # friction in 1/ps, dt in fs
+
+        self.addGlobalVariable("a", np.exp(-ft))
+        self.addGlobalVariable("b", np.sqrt(1 - np.exp(-2 * ft)))
+        self.addGlobalVariable("kT", kT)
+        self.addPerDofVariable("x1", 0)
+        self.addPerDofVariable("fadd", 0)
+
+        # create state K
+        self.addGlobalVariable("one_A", 0.0)
+        self.addGlobalVariable("Aup", 0.0)
+        self.addGlobalVariable("Adown", 0.0)
+        #integrator.addPerDofVariable("feff", 0.0)
+        self.addUpdateContextState()
+        # compute Astate
+        self.addComputeGlobal("Aup", "0.0")
+        self.addComputeGlobal("Adown", "0.0")
+        self.addComputeGlobal("Aup", AupT)
+        self.addComputeGlobal("Adown", AdownT)
+        self.addComputeGlobal("one_A", "1 - Aup / Adown * kT")
+        #integrator.addComputePerDof("fadd", "fadd * (1 - Aup / Adown * kT)")
+        self.addComputePerDof("v", "v + dt*f/m")
+        self.addComputePerDof("v", "v - dt*f1*one_A/m")
+        self.addConstrainVelocities()
+        self.addComputePerDof("x", "x + 0.5*dt*v")
+        self.addComputePerDof("v", "a*v + b*sqrt(kT/m)*gaussian")
+        self.addComputePerDof("x", "x + 0.5*dt*v")
+        self.addComputePerDof("x1", "x")
+        self.addConstrainPositions()
+        self.addComputePerDof("v", "v + (x-x1)/dt")
+
+    @classmethod
+    def genLogNList(cls, Tlist, Eref=0.0):
+        blist = 1. / 8.314 / Tlist * 1000.0
+        return blist * Eref
+
+    @classmethod
+    def genPk(cls, Tlist, logNlist, energylist):
+        betarep = (1. / 8.314 / Tlist * 1000.0).reshape((-1, 1))
+        ener = energylist.reshape((1, -1))
+        logN = logNlist.reshape((-1, 1))
+        Pall = np.exp(logN - betarep * ener)
+        Pk = Pall / Pall.sum(axis=0).reshape((1, -1))
+        return Pk
+
+    @classmethod
+    def getGroup1Energy(cls, system, positions):
+        integ = mm.VerletIntegrator(0.1)
+        context = mm.Context(system, integ)
+        context.setPositions(positions)
+        state = context.getState(getEnergy=True, groups={1})
+        return state.getPotentialEnergy().value_in_unit(
+            unit.kilojoule_per_mole)
+
+
+class SelectEnergyReporter:
+    def __init__(self, file: str, reportInterval: int, logNlist):
+        self._out = open(file, 'w')
+        self._reportInterval = reportInterval
+        self.logNlist = logNlist
+        self._out.write("# logN")
+        for n, logn in enumerate(logNlist):
+            if n % 10 == 0:
+                self._out.write("\n# ")
+            self._out.write(f"{logn:15.8f} ")
+        self._out.write("\n# ")
+
+    def __del__(self):
+        self._out.close()
+
+    def describeNextReport(self, simulation):
+        steps = self._reportInterval - simulation.currentStep % self._reportInterval
+        return (steps, False, False, False, False, None)
+
+    def report(self, simulation, state):
+        state2 = simulation.context.getState(getEnergy=True, groups={1})
+        ener = state2.getPotentialEnergy().value_in_unit(
+            unit.kilojoule_per_mole)
+        self._out.write(f"{ener:16.8f}\n")
+        self._out.flush()
