@@ -130,7 +130,7 @@ def steeredBiasConstVel(ref_idx, pull_idx, ref_weights, pull_weights, fc,
 
 class SITSLangevinIntegrator(mm.CustomIntegrator):
     def __init__(self, Tlist, logNlist, friction, dt):
-        super(SITSLangevinIntegrator, self).__init__(dt)
+        super(SITSLangevinIntegrator, self).__init__(dt*0.001)
 
         self.logNlist = logNlist
         self.Tlist = Tlist
