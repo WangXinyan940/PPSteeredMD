@@ -218,3 +218,20 @@ class SelectEnergyReporter:
             unit.kilojoule_per_mole)
         self._out.write(f"{ener:16.8f}\n")
         self._out.flush()
+
+
+def isDihBackbone(jname, kname):
+    backbones = ["C", "N", "CA"]
+    if jname not in backbones:
+        return False
+    if kname not in backbones:
+        return False
+    return True
+
+def isDihSidechain(jname, kname):
+    sidechains = ["CA", "CB"]
+    if jname not in sidechains:
+        return False
+    if kname not in sidechains:
+        return False
+    return True

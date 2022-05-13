@@ -7,7 +7,7 @@ except ImportError as e:
     import simtk.openmm.app as app
     import simtk.unit as unit
 import numpy as np
-from steermd.utils import SITSLangevinIntegrator, SelectEnergyReporter
+from steermd.utils import SITSLangevinIntegrator, SelectEnergyReporter, isDihBackbone, isDihSidechain
 from mdtraj.reporters import DCDReporter
 import sys
 import os
@@ -65,9 +65,24 @@ def regularMD(args):
     #     [atoms[i].element.mass.value_in_unit(unit.amu) for i in lig_idx])
 
     if args.sits:
+        newdih = None
         for force in system.getForces():
             if isinstance(force, mm.PeriodicTorsionForce):
-                force.setForceGroup(1)
+                dihforce = force
+                newdih = mm.PeriodicTorsionForce()
+                newdih.setForceGroup(1)
+                atoms = [_ for _ in pdb.topology.atoms()]
+                for itor in range(dihforce.getNumTorsions()):
+                    i, j, k, l, period, phase, k = dihforce.getTorsionParameters(
+                        itor)
+                    if isDihBackbone(atoms[j].name,
+                                     atoms[k].name) or isDihSidechain(
+                                         atoms[j].name, atoms[k].name):
+                        dihforce.setTorsionParameters(itor, i, j, k, l, period,
+                                                      phase, 0.0)
+                        newdih.addTorsion(i, j, k, l, period, phase, k)
+        if newdih is not None:
+            system.addForce(newdih)
 
         # equilibrate system
         print("Start EQ...")
@@ -76,7 +91,7 @@ def regularMD(args):
                                               args.delta * unit.femtosecond)
         simEQ = app.Simulation(pdb.topology, system, integEQ, plat)
         simEQ.context.setPositions(pdb.getPositions())
-        nstep = int(1.0 * 1000 * 1000 / args.delta)
+        nstep = int(200 * 1000 / args.delta)
         simEQ.reporters.append(
             app.StateDataReporter(sys.stdout,
                                   int(10.0 * 1000 / args.delta),
