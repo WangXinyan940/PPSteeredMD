@@ -50,7 +50,7 @@ def regularMD(args):
 
     if args.water:
         ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
-                            "amber14/tip3p_standard.xml")
+                            "amber14/tip3p.xml")
         pdbinit = app.PDBFile(args.input)
         pdb = app.Modeller(pdbinit.topology, pdbinit.positions)
         pdb.addSolvent(ff, padding=1.0 * unit.nanometer)
