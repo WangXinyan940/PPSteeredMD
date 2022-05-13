@@ -73,14 +73,14 @@ def regularMD(args):
                 newdih.setForceGroup(1)
                 atoms = [_ for _ in pdb.topology.atoms()]
                 for itor in range(dihforce.getNumTorsions()):
-                    i, j, k, l, period, phase, k = dihforce.getTorsionParameters(
+                    i, j, k, l, period, phase, kconst = dihforce.getTorsionParameters(
                         itor)
                     if isDihBackbone(atoms[j].name,
                                      atoms[k].name) or isDihSidechain(
                                          atoms[j].name, atoms[k].name):
                         dihforce.setTorsionParameters(itor, i, j, k, l, period,
                                                       phase, 0.0)
-                        newdih.addTorsion(i, j, k, l, period, phase, k)
+                        newdih.addTorsion(i, j, k, l, period, phase, kconst)
         if newdih is not None:
             system.addForce(newdih)
 
