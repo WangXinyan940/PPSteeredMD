@@ -98,9 +98,7 @@ def regularMD(args):
 
         # run MD
         Tlist = np.linspace(300., 600., 91)
-        Eref = SITSLangevinIntegrator.getGroup1Energy(
-            system, pdb.getPositions(asNumpy=True))
-        logNlist = SITSLangevinIntegrator.genLogNList(Tlist)
+        logNlist = SITSLangevinIntegrator.genLogNList(Tlist, Eref=Eref)
         integrator = SITSLangevinIntegrator(Tlist, logNlist, 5.0, args.delta)
         simulation = app.Simulation(pdb.topology, system, integrator, plat)
         simulation.context.setPositions(state.getPositions())
