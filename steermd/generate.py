@@ -36,6 +36,7 @@ def genIndices(args):
             f.write("%i " % (i+1))
             if n > 0 and n % 20 == 0:
                 f.write("\n")
+        f.write("\n")
 
 
 def genStates(args):
