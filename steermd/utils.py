@@ -139,8 +139,8 @@ class SITSLangevinIntegrator(mm.CustomIntegrator):
         for nstate in range(Tlist.shape[0]):
             kTi = 8.314 / 1000.0 * Tlist[nstate]
             logN = logNlist[nstate]
-            Aup.append(f"exp({logN:.64f} - energy1 / {kTi:.64f}) / {kTi:.64f}")
-            Adown.append(f"exp({logN:.64f} - energy1 / {kTi:.64f})")
+            Aup.append(f"exp({logN:.64e} - energy1 / {kTi:.64e}) / {kTi:.64e}")
+            Adown.append(f"exp({logN:.64e} - energy1 / {kTi:.64e})")
         AupT = " + ".join(Aup)
         AdownT = " + ".join(Adown)
 
