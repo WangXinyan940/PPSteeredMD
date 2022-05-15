@@ -130,7 +130,7 @@ def steeredBiasConstVel(ref_idx, pull_idx, ref_weights, pull_weights, fc,
 
 class SITSLangevinIntegrator(mm.CustomIntegrator):
     def __init__(self, Tlist, logNlist, friction, dt):
-        super(SITSLangevinIntegrator, self).__init__(dt*0.001)
+        super(SITSLangevinIntegrator, self).__init__(dt * 0.001)
 
         self.logNlist = logNlist
         self.Tlist = Tlist
@@ -210,13 +210,15 @@ class SelectEnergyReporter:
 
     def describeNextReport(self, simulation):
         steps = self._reportInterval - simulation.currentStep % self._reportInterval
-        return (steps, False, False, False, False, None)
+        return (steps, False, False, False, True, None)
 
     def report(self, simulation, state):
-        state2 = simulation.context.getState(getEnergy=True, groups={1})
-        ener = state2.getPotentialEnergy().value_in_unit(
+        ener1 = state.getPotentialEnergy().value_in_unit(
             unit.kilojoule_per_mole)
-        self._out.write(f"{ener:16.8f}\n")
+        state2 = simulation.context.getState(getEnergy=True, groups={1})
+        ener2 = state2.getPotentialEnergy().value_in_unit(
+            unit.kilojoule_per_mole)
+        self._out.write(f"{ener1:16.8f} {ener2:15.8f}\n")
         self._out.flush()
 
 
@@ -227,6 +229,7 @@ def isDihBackbone(jname, kname):
     if kname not in backbones:
         return False
     return True
+
 
 def isDihSidechain(jname, kname):
     sidechains = ["CA", "CB"]

@@ -103,6 +103,7 @@ def regularMD(args):
                                   remainingTime=True,
                                   speed=True,
                                   totalSteps=nstep))
+        simulation.minimizeEnergy()
         simEQ.step(nstep)
         state = simEQ.context.getState(getPositions=True,
                                        getVelocities=True,
@@ -112,7 +113,7 @@ def regularMD(args):
             unit.kilojoule_per_mole)
 
         # run MD
-        Tlist = np.linspace(300., 600., 91)
+        Tlist = np.linspace(300., 600., 81)
         logNlist = SITSLangevinIntegrator.genLogNList(Tlist, Eref=Eref)
         integrator = SITSLangevinIntegrator(Tlist, logNlist, 5.0, args.delta)
         simulation = app.Simulation(pdb.topology, system, integrator, plat)
@@ -125,9 +126,9 @@ def regularMD(args):
         simulation = app.Simulation(pdb.topology, system, integrator, plat)
         simulation.context.setPositions(pdb.getPositions())
         simulation.context.setVelocitiesToTemperature(300.0 * unit.kelvin)
+        simulation.minimizeEnergy()
 
     nstep = int(args.length * 1000 / args.delta)
-
     simulation.reporters.append(
         app.StateDataReporter(sys.stdout,
                               int(10.0 * 1000 / args.delta),
@@ -146,5 +147,4 @@ def regularMD(args):
             SelectEnergyReporter(args.sits_out, int(10.0 * 1000 / args.delta),
                                  integrator.logNlist))
 
-    simulation.minimizeEnergy()
     simulation.step(nstep)
