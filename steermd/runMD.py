@@ -91,7 +91,7 @@ def regularMD(args):
     system = ff.createSystem(pdb.topology,
                              nonbondedMethod=app.CutoffNonPeriodic,
                              nonbondedCutoff=1.6 * unit.nanometer,
-                             constraints=app.AllBonds,
+                             constraints=app.HBonds,
                              hydrogenMass=2.0 * unit.amu)
     integrator = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
                                              5.0 / unit.picosecond,
