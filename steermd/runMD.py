@@ -83,7 +83,7 @@ def regularMD(args):
                         atomSubset=idx))
         simulation.step(nstep)
 
-    traj = md.load(args.traj)
+    traj = md.load(args.traj, top=args.input)
     ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
                         "amber14/tip3p.xml")
     pdb = app.PDBFile(args.input)
