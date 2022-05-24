@@ -10,6 +10,7 @@ import numpy as np
 from steermd.utils import SITSLangevinIntegrator, SelectEnergyReporter, isDihBackbone, isDihSidechain
 from mdtraj.reporters import DCDReporter
 import mdtraj as md
+from tqdm import tqdm
 import sys
 import os
 
