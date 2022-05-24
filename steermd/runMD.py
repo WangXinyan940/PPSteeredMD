@@ -86,7 +86,7 @@ def regularMD(args):
 
     traj = md.load(args.traj, top=args.input)
     ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
-                        "amber14/tip3p.xml")
+                        "%s/prm/gbn2.xml" % HOME)
     pdb = app.PDBFile(args.input)
     system = ff.createSystem(pdb.topology,
                              nonbondedMethod=app.CutoffNonPeriodic,
