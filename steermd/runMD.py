@@ -9,6 +9,7 @@ except ImportError as e:
 import numpy as np
 from steermd.utils import SITSLangevinIntegrator, SelectEnergyReporter, isDihBackbone, isDihSidechain
 from mdtraj.reporters import DCDReporter
+import mdtraj as md
 import sys
 import os
 
