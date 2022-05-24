@@ -284,6 +284,11 @@ def main():
                              type=str,
                              required=True,
                              help="Input PDB.")
+    parser_bfmd.add_argument("-o",
+                             "--output",
+                             type=str,
+                             required=True,
+                             help="Output energy file.")
     # parser_steer.add_argument(
     #     "-n",
     #     "--index",
@@ -308,13 +313,9 @@ def main():
     parser_bfmd.add_argument("--water",
                              action="store_true",
                              help="Add water in the simulation")
-    parser_bfmd.add_argument("--sits",
+    parser_bfmd.add_argument("--rerun",
                              action="store_true",
-                             help="Selective ITS to boost dihedral angles.")
-    parser_bfmd.add_argument("--sits_out",
-                             type=str,
-                             default="energy_sits.txt",
-                             help="Group 1 energy for SITS.")
+                             help="Rerun without simulation.")
     parser_bfmd.set_defaults(func=regularMD)
 
     args = parser.parse_args()

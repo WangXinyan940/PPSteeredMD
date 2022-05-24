@@ -27,72 +27,45 @@ def regularMD(args):
     else:
         plat = mm.Platform.getPlatformByName("CPU")
 
-    print("Build...")
+    if not args.rerun:
+        print("Build...")
 
-    if args.water:
-        ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
-                            "amber14/tip3p.xml")
-        pdbinit = app.PDBFile(args.input)
-        pdb = app.Modeller(pdbinit.topology, pdbinit.positions)
-        pdb.addSolvent(ff, padding=1.0 * unit.nanometer)
-        idx = [a.index for a in pdbinit.topology.atoms()]
-    else:
-        ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
-                            "%s/prm/gbn2.xml" % HOME)
-        pdb = app.PDBFile(args.input)
-        idx = [a.index for a in pdb.topology.atoms()]
+        if args.water:
+            ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
+                                "amber14/tip3p.xml")
+            pdbinit = app.PDBFile(args.input)
+            pdb = app.Modeller(pdbinit.topology, pdbinit.positions)
+            pdb.addSolvent(ff, padding=1.0 * unit.nanometer)
+            idx = [a.index for a in pdbinit.topology.atoms()]
+        else:
+            ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
+                                "%s/prm/gbn2.xml" % HOME)
+            pdb = app.PDBFile(args.input)
+            idx = [a.index for a in pdb.topology.atoms()]
 
-    if args.water:
-        system = ff.createSystem(pdb.topology,
-                                 nonbondedMethod=app.PME,
-                                 nonbondedCutoff=1.0 * unit.nanometer,
-                                 constraints=app.AllBonds,
-                                 hydrogenMass=2.0 * unit.amu)
-    else:
-        system = ff.createSystem(pdb.topology,
-                                 nonbondedMethod=app.CutoffNonPeriodic,
-                                 nonbondedCutoff=1.6 * unit.nanometer,
-                                 constraints=app.AllBonds,
-                                 hydrogenMass=2.0 * unit.amu)
+        if args.water:
+            system = ff.createSystem(pdb.topology,
+                                     nonbondedMethod=app.PME,
+                                     nonbondedCutoff=1.0 * unit.nanometer,
+                                     constraints=app.HBonds,
+                                     hydrogenMass=2.0 * unit.amu)
+        else:
+            system = ff.createSystem(pdb.topology,
+                                     nonbondedMethod=app.CutoffNonPeriodic,
+                                     nonbondedCutoff=1.6 * unit.nanometer,
+                                     constraints=app.HBonds,
+                                     hydrogenMass=2.0 * unit.amu)
 
-    # indices = readIndices(args.index)
-    # rec_idx = indices["receptor"]
-    # lig_idx = indices["ligand"]
-    # atoms = [a for a in pdb.topology.atoms()]
-    # rec_weights = np.array(
-    #     [atoms[i].element.mass.value_in_unit(unit.amu) for i in rec_idx])
-    # lig_weights = np.array(
-    #     [atoms[i].element.mass.value_in_unit(unit.amu) for i in lig_idx])
+        integrator = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
+                                                 5.0 / unit.picosecond,
+                                                 args.delta * unit.femtosecond)
+        simulation = app.Simulation(pdb.topology, system, integrator, plat)
+        simulation.context.setPositions(pdb.getPositions())
+        simulation.context.setVelocitiesToTemperature(300.0 * unit.kelvin)
+        simulation.minimizeEnergy()
 
-    if args.sits:
-        newdih = None
-        for force in system.getForces():
-            if isinstance(force, mm.PeriodicTorsionForce):
-                dihforce = force
-                newdih = mm.PeriodicTorsionForce()
-                newdih.setForceGroup(1)
-                atoms = [_ for _ in pdb.topology.atoms()]
-                for itor in range(dihforce.getNumTorsions()):
-                    i, j, k, l, period, phase, kconst = dihforce.getTorsionParameters(
-                        itor)
-                    if isDihBackbone(atoms[j].name,
-                                     atoms[k].name) or isDihSidechain(
-                                         atoms[j].name, atoms[k].name):
-                        dihforce.setTorsionParameters(itor, i, j, k, l, period,
-                                                      phase, 0.0)
-                        newdih.addTorsion(i, j, k, l, period, phase, kconst)
-        if newdih is not None:
-            system.addForce(newdih)
-
-        # equilibrate system
-        print("Start EQ...")
-        integEQ = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
-                                              5.0 / unit.picosecond,
-                                              args.delta * unit.femtosecond)
-        simEQ = app.Simulation(pdb.topology, system, integEQ, plat)
-        simEQ.context.setPositions(pdb.getPositions())
-        nstep = int(100 * 1000 / args.delta)
-        simEQ.reporters.append(
+        nstep = int(args.length * 1000 / args.delta)
+        simulation.reporters.append(
             app.StateDataReporter(sys.stdout,
                                   int(10.0 * 1000 / args.delta),
                                   step=True,
@@ -103,48 +76,29 @@ def regularMD(args):
                                   remainingTime=True,
                                   speed=True,
                                   totalSteps=nstep))
-        simulation.minimizeEnergy()
-        simEQ.step(nstep)
-        state = simEQ.context.getState(getPositions=True,
-                                       getVelocities=True,
-                                       getEnergy=True,
-                                       groups={1})
-        Eref = state.getPotentialEnergy().value_in_unit(
-            unit.kilojoule_per_mole)
-
-        # run MD
-        Tlist = np.linspace(300., 600., 81)
-        logNlist = SITSLangevinIntegrator.genLogNList(Tlist, Eref=Eref)
-        integrator = SITSLangevinIntegrator(Tlist, logNlist, 5.0, args.delta)
-        simulation = app.Simulation(pdb.topology, system, integrator, plat)
-        simulation.context.setPositions(state.getPositions())
-        simulation.context.setVelocities(state.getVelocities())
-    else:
-        integrator = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
-                                                 5.0 / unit.picosecond,
-                                                 args.delta * unit.femtosecond)
-        simulation = app.Simulation(pdb.topology, system, integrator, plat)
-        simulation.context.setPositions(pdb.getPositions())
-        simulation.context.setVelocitiesToTemperature(300.0 * unit.kelvin)
-        simulation.minimizeEnergy()
-
-    nstep = int(args.length * 1000 / args.delta)
-    simulation.reporters.append(
-        app.StateDataReporter(sys.stdout,
-                              int(10.0 * 1000 / args.delta),
-                              step=True,
-                              time=True,
-                              potentialEnergy=True,
-                              temperature=True,
-                              progress=True,
-                              remainingTime=True,
-                              speed=True,
-                              totalSteps=nstep))
-    simulation.reporters.append(
-        DCDReporter(args.traj, int(10.0 * 1000 / args.delta), atomSubset=idx))
-    if args.sits:
         simulation.reporters.append(
-            SelectEnergyReporter(args.sits_out, int(10.0 * 1000 / args.delta),
-                                 integrator.logNlist))
+            DCDReporter(args.traj,
+                        int(10.0 * 1000 / args.delta),
+                        atomSubset=idx))
+        simulation.step(nstep)
 
-    simulation.step(nstep)
+    traj = md.load(args.traj)
+    ff = app.ForceField("%s/prm/amberff14SBonlysc.xml" % HOME,
+                        "amber14/tip3p.xml")
+    pdb = app.PDBFile(args.input)
+    system = ff.createSystem(pdb.topology,
+                             nonbondedMethod=app.CutoffNonPeriodic,
+                             nonbondedCutoff=1.6 * unit.nanometer,
+                             constraints=app.AllBonds,
+                             hydrogenMass=2.0 * unit.amu)
+    integrator = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
+                                             5.0 / unit.picosecond,
+                                             args.delta * unit.femtosecond)
+    ctx = mm.Context(system, integrator, plat)
+    with open(args.output, "w") as f:
+        for frame in tqdm(traj):
+            ctx.setPositions(frame.xyz[0, :, :] * unit.nanometer)
+            ener = ctx.getState(
+                getEnergy=True).getPotentialEnergy().value_in_unit(
+                    unit.kilojoule_per_mole)
+            f.write(f"{ener:16.8f}\n")
