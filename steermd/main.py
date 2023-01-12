@@ -233,19 +233,19 @@ def main():
                                "--vel",
                                dest="velocity",
                                type=float,
-                               default=0.001,
+                               default=0.0001,
                                help="Pulling velocity (nm/ps)")
     parser_psteer.add_argument("-l",
                                "--length",
                                dest="length",
                                type=float,
-                               default=4000.0,
+                               default=3000.0,
                                help="Simulation length (ps)")
     parser_psteer.add_argument("-f",
                                "--fconst",
                                dest="fconst",
                                type=float,
-                               default=2500.0,
+                               default=4184.0,
                                help="Force constant (kJ/mol/nm^2)")
     parser_psteer.add_argument("--nprint",
                                type=int,
@@ -255,6 +255,10 @@ def main():
                                type=float,
                                default=2.0,
                                help="Timestep in fs.")
+    parser_psteer.add_argument("--restraint",
+                               type=str,
+                               default="all",
+                               help="Restraints on proteins. [ss, all, none] (default: all)")
     parser_psteer.set_defaults(func=runSteerMDPlumed)
 
     parser_spect = subparsers.add_parser("spect", help="")

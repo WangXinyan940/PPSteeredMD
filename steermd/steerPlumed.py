@@ -22,7 +22,7 @@ def runSteerMDPlumed(args):
     ]
     if "CUDA" in platNames:
         plat = mm.Platform.getPlatformByName("CUDA")
-    #elif "OpenCL" in platNames:
+    # elif "OpenCL" in platNames:
     #    plat = mm.Platform.getPlatformByName("OpenCL")
     else:
         plat = mm.Platform.getPlatformByName("CPU")
@@ -81,9 +81,42 @@ FLUSH STRIDE={args.nprint}
 PRINT ARG=dist,bias.dist_cntr,bias.dist_work,bias.force2 STRIDE={args.nprint} FILE={args.output}"""
     system.addForce(PlumedForce(plumedtxt))
 
-    integ = mm.LangevinMiddleIntegrator(300.0 * unit.kelvin,
-                                        5.0 / unit.picosecond,
-                                        args.delta * unit.femtosecond)
+    if args.restraint == "none":
+        print("No restraint.")
+    elif args.restraint == "all":
+        idx0 = np.zeros((pos.shape[0],))
+        idx0[rec_idx] = 1.0
+        rmsd_r = mm.RMSDForce(pos * unit.nanometer, idx0)
+        idx0 = np.zeros((pos.shape[0],))
+        idx0[lig_idx] = 1.0
+        rmsd_l = mm.RMSDForce(pos * unit.nanometer, idx0)
+        res_bias = mm.CustomCVForce("0.5*2000*(cv1^2+cv2^2)")
+        res_bias.addCollectiveVariable("cv1", rmsd_r)
+        res_bias.addCollectiveVariable("cv2", rmsd_l)
+        system.addForce(res_bias)
+    elif args.restraint == "ss":
+        import mdtraj as md
+        traj = md.load(args.topol)
+        dssp = md.compute_dssp(traj)
+        ss_idx = np.array([1 if dssp[0, atom.residue.index] in [
+            "H", "E"] else 0 for atom in traj.topology.atoms])
+
+        idx0 = np.zeros((pos.shape[0],))
+        idx0[rec_idx] = 1.0
+        rmsd_r = mm.RMSDForce(pos * unit.nanometer, idx0 * ss_idx)
+        idx0 = np.zeros((pos.shape[0],))
+        idx0[lig_idx] = 1.0
+        rmsd_l = mm.RMSDForce(pos * unit.nanometer, idx0 * ss_idx)
+        res_bias = mm.CustomCVForce("0.5*2000*(cv1^2+cv2^2)")
+        res_bias.addCollectiveVariable("cv1", rmsd_r)
+        res_bias.addCollectiveVariable("cv2", rmsd_l)
+        system.addForce(res_bias)
+    else:
+        raise BaseException(f"Unsupported restraint type {args.restraint}.")
+
+    integ = mm.LangevinIntegrator(300.0 * unit.kelvin,
+                                  5.0 / unit.picosecond,
+                                  args.delta * unit.femtosecond)
     simulation = app.Simulation(pdb.topology, system, integ, plat)
     with open(args.input, "r") as f:
         state = mm.XmlSerializer.deserialize(f.read())
