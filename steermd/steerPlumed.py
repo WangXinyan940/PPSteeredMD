@@ -84,15 +84,19 @@ PRINT ARG=dist,bias.dist_cntr,bias.dist_work,bias.force2 STRIDE={args.nprint} FI
     import mdtraj as md
     traj = md.load(args.topol)
     bb_index = np.array([1 if a.name.strip() in ["CA", "C", "N", "O"] else 0 for a in traj.topology.atoms])
+
+    def mask2idx(mask):
+        return [i for i in range(len(mask)) if mask[i] > 0]
+
     if args.restraint == "none":
         print("No restraint.")
     elif args.restraint == "all":
         idx0 = np.zeros((pos.shape[0],))
         idx0[rec_idx] = 1.0
-        rmsd_r = mm.RMSDForce(pos * unit.nanometer, idx0 * bb_index)
+        rmsd_r = mm.RMSDForce(pos * unit.nanometer, mask2idx(idx0 * bb_index))
         idx0 = np.zeros((pos.shape[0],))
         idx0[lig_idx] = 1.0
-        rmsd_l = mm.RMSDForce(pos * unit.nanometer, idx0 * bb_index)
+        rmsd_l = mm.RMSDForce(pos * unit.nanometer, mask2idx(idx0 * bb_index))
         res_bias = mm.CustomCVForce("0.5*2000*(cv1^2+cv2^2)")
         res_bias.addCollectiveVariable("cv1", rmsd_r)
         res_bias.addCollectiveVariable("cv2", rmsd_l)
@@ -104,10 +108,10 @@ PRINT ARG=dist,bias.dist_cntr,bias.dist_work,bias.force2 STRIDE={args.nprint} FI
 
         idx0 = np.zeros((pos.shape[0],))
         idx0[rec_idx] = 1.0
-        rmsd_r = mm.RMSDForce(pos * unit.nanometer, idx0 * ss_idx * bb_index)
+        rmsd_r = mm.RMSDForce(pos * unit.nanometer, mask2idx(idx0 * ss_idx * bb_index))
         idx0 = np.zeros((pos.shape[0],))
         idx0[lig_idx] = 1.0
-        rmsd_l = mm.RMSDForce(pos * unit.nanometer, idx0 * ss_idx * bb_index)
+        rmsd_l = mm.RMSDForce(pos * unit.nanometer, mask2idx(idx0 * ss_idx * bb_index))
         res_bias = mm.CustomCVForce("0.5*2000*(cv1^2+cv2^2)")
         res_bias.addCollectiveVariable("cv1", rmsd_r)
         res_bias.addCollectiveVariable("cv2", rmsd_l)
